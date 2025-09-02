@@ -14,8 +14,6 @@ company_list = [
     "data/AMAT_data.csv",
     "data/AMD_data.csv"
 ]
-
-
 # Read and merge all CSVs
 all_df = pd.DataFrame()
 for file in company_list:
@@ -28,13 +26,10 @@ all_df['date'] = pd.to_datetime(all_df['date'])
 # Streamlit dashboard
 st.set_page_config(page_title='Stock Analysis Dashboard', layout='wide')
 st.title("EDA Dashboard")
-
 tech_list = all_df['Name'].unique()
-
 st.sidebar.title("Choose a company")
 selected_company = st.sidebar.selectbox("Select a company", tech_list)
-
-company_df=all_df[all_df['Name'] == selected_company]
+company_df = all_df[all_df['Name'] == selected_company].copy()
 company_df = company_df.sort_values('date')
 
 ##1st plot
@@ -58,11 +53,9 @@ st.plotly_chart(fig3,use_container_width=True)
 
 ##4th plot
 st.subheader("4.Resample closing price ")
-
 company_df['date'] = pd.to_datetime(company_df['date'])
 company_df = company_df.sort_values('date')
 company_df_resample = company_df.set_index('date')
-
 resample_option = st.radio('Select resample frequency', ['Monthly', "Quarterly","Yearly"])
 if resample_option == "Monthly":
     resampled = company_df_resample['close'].resample('M').mean()
@@ -70,11 +63,8 @@ elif resample_option == "Quarterly":
     resampled = company_df_resample['close'].resample('Q').mean()
 else:
     resampled = company_df_resample['close'].resample('Y').mean()
-
 resampled = resampled.reset_index()
 resampled.columns = ['date', 'close']
-
-
 fig4 = px.line(
     resampled,
     x='date',
@@ -85,37 +75,11 @@ st.plotly_chart(fig4, use_container_width=True)
 
 ##5th plot
 st.subheader("5. Closing price correlation ")
-dfs = {}
-for i, name in enumerate(["aal", "aapl", "amat", "amd"]):
-    df = pd.read_csv(company_list[i])
-    df['date'] = pd.to_datetime(df['date'])
-    df = df.set_index('date').sort_index()
-    dfs[name] = df
-
-closing_price = pd.DataFrame()
-for name, df in dfs.items():
-    closing_price[f"{name}_close"] = df["close"]
-
+closing_price = all_df.pivot(index='date', columns='Name', values='close')
+closing_price=closing_price.dropna()
 fig5, ax = plt.subplots()
 sns.heatmap(closing_price.corr(), annot=True, cmap='coolwarm', ax=ax)
 st.pyplot(fig5)
 
-
-
 st.markdown('-------')
 st.markdown('Data Analysis Project 1')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
