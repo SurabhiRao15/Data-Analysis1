@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Spyder Editor
-
-This is a temporary script file.
-"""
 
 import streamlit as st
 import pandas as pd
@@ -14,11 +9,12 @@ import glob
 import plotly.express as px
 
 company_list = [
-    r'C:\\Users\\rguru\\Desktop\\Certificates & course notes\\Statistics for DS notes\\S&P project\\individual_stocks_5yr\\AAL_data.csv',
-    r'C:\\Users\\rguru\\Desktop\\Certificates & course notes\\Statistics for DS notes\\S&P project\\individual_stocks_5yr\\AAPL_data.csv',
-    r'C:\\Users\\rguru\\Desktop\\Certificates & course notes\\Statistics for DS notes\\S&P project\\individual_stocks_5yr\\AMAT_data.csv',
-    r'C:\\Users\\rguru\\Desktop\\Certificates & course notes\\Statistics for DS notes\\S&P project\\individual_stocks_5yr\\AMD_data.csv'
+    "data/AAL_data.csv",
+    "data/AAPL_data.csv",
+    "data/AMAT_data.csv",
+    "data/AMD_data.csv"
 ]
+
 
 # Read and merge all CSVs
 all_df = pd.DataFrame()
@@ -39,7 +35,8 @@ st.sidebar.title("Choose a company")
 selected_company = st.sidebar.selectbox("Select a company", tech_list)
 
 company_df=all_df[all_df['Name'] == selected_company]
-company_df.sort_values('date',inplace=True)
+company_df = company_df.sort_values('date')
+
 ##1st plot
 st.subheader(f"1. Closing Price of {selected_company} over time")
 fig1=px.line(company_df,x='date',y='close',title=selected_company + " closing price over time")
@@ -61,16 +58,22 @@ st.plotly_chart(fig3,use_container_width=True)
 
 ##4th plot
 st.subheader("4.Resample closing price ")
-company_df.set_index('date',inplace=True)
-resample_option=st.radio('Select resample frequency', ['Monthly', "Quarterly","Yearly"])
-if resample_option=="Monthly":
-    resampled= company_df['close'].resample('M').mean()
-elif resample_option=="Quarterly":
-    resampled=company_df['close'].resample('Q').mean()
+
+company_df['date'] = pd.to_datetime(company_df['date'])
+company_df = company_df.sort_values('date')
+company_df_resample = company_df.set_index('date')
+
+resample_option = st.radio('Select resample frequency', ['Monthly', "Quarterly","Yearly"])
+if resample_option == "Monthly":
+    resampled = company_df_resample['close'].resample('M').mean()
+elif resample_option == "Quarterly":
+    resampled = company_df_resample['close'].resample('Q').mean()
 else:
-    resampled=company_df['close'].resample('Y').mean()
+    resampled = company_df_resample['close'].resample('Y').mean()
+
 resampled = resampled.reset_index()
 resampled.columns = ['date', 'close']
+
 
 fig4 = px.line(
     resampled,
@@ -82,23 +85,15 @@ st.plotly_chart(fig4, use_container_width=True)
 
 ##5th plot
 st.subheader("5. Closing price correlation ")
-aal=pd.read_csv(company_list[0])
-aapl=pd.read_csv(company_list[1])
-amat=pd.read_csv(company_list[2])
-amd=pd.read_csv(company_list[3])
- 
-dfs = {
-    "aal": aal,
-    "aapl": aapl,
-    "amat": amat,
-    "amd": amd
-}
+dfs = {}
+for i, name in enumerate(["aal", "aapl", "amat", "amd"]):
+    df = pd.read_csv(company_list[i])
+    df['date'] = pd.to_datetime(df['date'])
+    df = df.set_index('date').sort_index()
+    dfs[name] = df
 
 closing_price = pd.DataFrame()
-
 for name, df in dfs.items():
-    df['date'] = pd.to_datetime(df['date'])
-    df = df.set_index('date')
     closing_price[f"{name}_close"] = df["close"]
 
 fig5, ax = plt.subplots()
@@ -106,8 +101,10 @@ sns.heatmap(closing_price.corr(), annot=True, cmap='coolwarm', ax=ax)
 st.pyplot(fig5)
 
 
+
 st.markdown('-------')
-st.markdown('Done by SURABHI RAO')
+st.markdown('Data Analysis Project 1')
+
 
 
 
